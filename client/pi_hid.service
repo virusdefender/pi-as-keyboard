@@ -1,0 +1,10 @@
+[Unit]
+Description=PI Hid client
+After=multi-user.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python /home/pi/pi-as-keyboard/client/client.py
+
+[Install]
+WantedBy=multi-user.target

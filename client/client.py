@@ -1,6 +1,7 @@
 import string
-from websocket import create_connection
 import json
+import time
+from websocket import create_connection
 
 
 class HexStr(str):
@@ -41,11 +42,17 @@ def write_hid(s):
             s, k = letter_to_keycode(item)
             f.write(s + "\x00" + k + "\x00" * 5)
             f.write("\x00" * 8)
-            f.flush()
+        f.write("\x00\x00" + others_table["\n"][1] + "\x00" * 5)
+        f.writable("\x00" * 8)
+        f.flush()
 
-
+time.sleep(15)
 ws = create_connection("ws://192.168.2.1:8083")
-ws.send(json.dumps({"msg_type": "register"}))
+ws.send(json.dumps({"msg_type": "register", "client_type": "device"}))
 while True:
     data = ws.recv()
     print(data)
+    command = json.loads(data)
+    if command["msg_type"] == "run_command":
+        write_hid(command["command"])
+        ws.send(json.dumps({"index": command["index"], "status": "done", "msg_type": "run_result"}).decode("utf-8"))
