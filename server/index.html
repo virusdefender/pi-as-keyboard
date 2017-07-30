@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Remote Keyboard</title>
+    <link rel="stylesheet" href="https://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://cdn.bootcss.com/vue/2.4.2/vue.js"></script>
+</head>
+<body class="container">
+<h2>Remote Keyboard</h2>
+<div id="app">
+    <div>
+        ws status: {{ wsConnected }}
+    </div>
+    <div class="form-group">
+        <label for="input">Input</label>
+        <input type="text" class="form-control" v-model="command" placeholder="ls" v-on:keydown="submitCommand"
+               autocomplete="false">
+    </div>
+    <button type="button" class="btn btn-success">Send</button>
+    <h3>Command List</h3>
+    <ul>
+        <li v-for="command in reversedCommandList">{{ command.dt }}  {{ command.command }} 【{{ command.status }}】</li>
+    </ul>
+</div>
+
+<script>
+    var app = new Vue({
+        el: "#app",
+        data: {
+            command: "",
+            commandList: [],
+            ws: {},
+            wsConnected: false
+        },
+        computed: {
+            reversedCommandList: function () {
+                return this.commandList.slice().reverse()
+            }
+        },
+        methods: {
+            submitCommand: function (e) {
+                if (e.keyCode === 13) {
+                    var dt = new Date()
+                    var index = this.commandList.push({command: this.command, status: "pending", "dt": dt.getHours() + ":" + dt.getMinutes() + ":" + dt.getSeconds()}) - 1
+                    this.ws.send(JSON.stringify({index: index, command: this.command, msg_type: "run_command"}))
+                    this.command = ""
+                }
+            }
+        },
+        mounted: function () {
+            var self = this
+            this.ws = new WebSocket("ws://127.0.0.1:8003")
+
+            this.ws.onopen = function (event) {
+                console.log("ws opened")
+                self.ws.send(JSON.stringify({msg_type: "register", client_type: "keyboard"}))
+                self.wsConnected = true
+            }
+            this.ws.onmessage = function (event) {
+                var data = JSON.parse(event.data)
+                self.commandList[data.index].status = data.status
+            }
+            this.ws.onerror = this.ws.onclose = function (event) {
+                self.wsConnected = false
+            }
+        }
+    })
+</script>
+</body>
+</html>

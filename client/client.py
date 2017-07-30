@@ -1,4 +1,6 @@
 import string
+from websocket import create_connection
+import json
 
 
 class HexStr(str):
@@ -42,4 +44,8 @@ def write_hid(s):
             f.flush()
 
 
-write_hid("abcdEDFR123490!@")
+ws = create_connection("ws://192.168.2.1:8083")
+ws.send(json.dumps({"msg_type": "register"}))
+while True:
+    data = ws.recv()
+    print(data)
