@@ -3,8 +3,20 @@ import struct
 import os
 
 
+serial = "fedcba9876543210"
+path = "/dev/input/by-id"
+
+for item in os.listdir(path):
+    if serial in item:
+        device_path = os.path.join(path, item)
+        break
+else:
+    print "No device"
+    exit(1)
+
+
 def write_led(led, value):
-    fd = os.open("/dev/input/by-path/pci-0000:02:03.0-usb-0:2:1.0-event-kbd", os.O_WRONLY)
+    fd = os.open(device_path, os.O_WRONLY)
     now = time.time()
     sec = int(now)
     usec = int((now - sec) * 1.0E6)
